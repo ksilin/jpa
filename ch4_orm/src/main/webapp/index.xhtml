@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	template="/WEB-INF/templates/default.xhtml">
+	<ui:define name="content">
+		<h1>Welcome to Pro JPA2 examples</h1>
+
+		<h:form id="reg">
+			<table>
+				<tr>
+					<th style="text-align: right;"><h:outputLabel for="name"
+							value="Name:" /></th>
+					<td><h:inputText id="name" value="#{newEmployee.name}" /> <h:message
+							for="name" errorClass="invalid" /></td>
+				</tr>
+
+				<tr>
+					<th style="text-align: right;"><h:outputLabel for="salary"
+							value="Salary #:" /></th>
+					<td><h:inputText id="salary" value="#{newEmployee.salary}" />
+						<h:message for="salary" errorClass="invalid" /></td>
+				</tr>
+			</table>
+			<p>
+				<h:commandButton id="register"
+					action="#{employeeRegistration.register}" value="Register" />
+				<h:outputText value=" Registered!"
+					rendered="#{facesContext.postback and empty facesContext.messageList}"
+					style="color: green;" />
+			</p>
+		</h:form>
+		<h2>Members</h2>
+		<h:panelGroup rendered="#{empty employees}">
+			<em>No registered employees.</em>
+		</h:panelGroup>
+		<h:dataTable var="emp" value="#{employees}"
+			rendered="#{not empty employees}">
+			<h:column>
+				<f:facet name="header">Id</f:facet>
+                #{emp.id}
+            </h:column>
+			<h:column>
+				<f:facet name="header">Name</f:facet>
+                #{emp.name}
+            </h:column>
+			<h:column>
+				<f:facet name="header">Salary</f:facet>
+                #{emp.salary}
+            </h:column>
+		</h:dataTable>
+	</ui:define>
+</ui:composition>

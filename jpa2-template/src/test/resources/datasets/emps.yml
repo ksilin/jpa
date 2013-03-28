@@ -1,0 +1,7 @@
+Employee:
+  - id: 1
+    name: "Smithers"
+    salary: 1000
+  - id: 2
+    name: "Homer"
+    salary: 9000

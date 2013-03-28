@@ -1,0 +1,15 @@
+target
+*.iws
+*.ipr
+*.iml
+.settings
+.classpath
+.metadata
+.project
+.idea
+bin
+.DS_Store
+.pmd
+*.jsfdia
+*.factorypath
+
