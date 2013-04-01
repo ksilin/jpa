@@ -13,7 +13,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
-import javax.transaction.UserTransaction;
+import javax.transaction.*;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -224,12 +224,12 @@ public class CollectionsTest {
 	}
 
     @Test
-    public void passListOfNewEntitesToIn(){
+    public void passListOfNewEntitesToIn() throws HeuristicRollbackException, RollbackException, HeuristicMixedException, SystemException, NotSupportedException {
 
         Project p2 = new Project();
         p2.setId(1);
 
-        String queryString = "SELECT e FROM Employee e WHERE :project IN :projects";
+        String queryString = "SELECT e FROM Employee e WHERE :project IN e.projects";
         TypedQuery<Employee> query3 = em.createQuery(queryString,
                 Employee.class);
         query3.setParameter("project", p2);

@@ -56,7 +56,7 @@ public class InheritanceTest {
 
 	// just to see if test is working at all
 	@Test
-	public void testEntitesInPlace() throws Exception {
+	public void testEntitiesInPlace() throws Exception {
 		log.warn("------------------------------------------------------------------");
 
 		// selecting a derived type using TYPE
@@ -68,7 +68,7 @@ public class InheritanceTest {
 
 		List<Project> resultList = projectQuery.getResultList();
 
-		assertEquals(2, resultList.size());
+		assertEquals(3, resultList.size());
 	}
 
 }

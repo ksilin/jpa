@@ -15,7 +15,7 @@ import javax.persistence.ManyToMany;
 /**
  * A simple Entity, taken from the Pro JPA2 book.
  *
- * Has a ManyToMany relation to the {@link ProjectEmployee}
+ * Has a ManyToMany relation to the {@link Employee}
  *
  * @author kostja
  *
