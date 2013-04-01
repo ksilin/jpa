@@ -1,7 +1,5 @@
 package pro.jpa2.model.derived;
 
-import pro.jpa2.model.ContactInfo;
-
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

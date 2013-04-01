@@ -1,15 +1,8 @@
-package pro.jpa2.model;
+package pro.jpa2.model.derived;
 
+import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapKey;
 
 /**
  * An Embeddable is not a complete Entity - it needs an entity to be identified.

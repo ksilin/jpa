@@ -9,9 +9,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
-import pro.jpa2.model.ContactInfo;
-import pro.jpa2.model.Employee;
-import pro.jpa2.model.Phone;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -20,6 +17,7 @@ import javax.persistence.TypedQuery;
 import javax.transaction.UserTransaction;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +32,8 @@ public class DerivedIdTest {
     public static Archive<?> createTestArchive() {
         return ShrinkWrap
                 .create(WebArchive.class, "test.war")
-                .addPackages(true, "pro.jpa2.resources")
+                .addPackages(true, "pro.jpa2.model.derived")
+                .addPackages(true, "pro.jpa2.util")
                 .addAsResource("META-INF/persistence.xml",
                         "META-INF/persistence.xml")
                         // a safer way to seed with Hibernate - the @UsingDataSet breaks
@@ -56,10 +55,10 @@ public class DerivedIdTest {
     @Test
     public void testEntitiesInPlace() throws Exception {
         log.warn("------------------------------------------------------------------");
-        assertEntity(pro.jpa2.model.Employee.class, 3);
+        assertEntity(Employee.class, 3);
         assertEntity(Phone.class, 4);
 
-        for (pro.jpa2.model.Employee e : getAll(pro.jpa2.model.Employee.class)) {
+        for (Employee e : getAll(Employee.class)) {
             assertNotNull(e.getContactInfo());
         }
     }
@@ -84,8 +83,8 @@ public class DerivedIdTest {
         //working with detached entities, so prefetch the association
         String queryString = "SELECT DISTINCT e FROM Employee  e JOIN FETCH e.contactInfo.phones";
 
-        TypedQuery<pro.jpa2.model.Employee> query = em.createQuery(queryString, pro.jpa2.model.Employee.class);
-        List<pro.jpa2.model.Employee> allResults = query.getResultList();
+        TypedQuery<Employee> query = em.createQuery(queryString, Employee.class);
+        List<Employee> allResults = query.getResultList();
 
         for (Employee employee : allResults) {
             log.info("employee: {}", employee);
@@ -128,9 +127,11 @@ public class DerivedIdTest {
         for (ContactInfo info : allResults) {
             assertNull(info.getPrimaryPhone());
 
-            //TODO: set primary phone
-
-            info.setPrimaryPhone(info.getPhones().entrySet().iterator().next().getValue());
+            Map<String, Phone> phones = info.getPhones();
+            if (phones != null && !phones.isEmpty()) {
+                Phone primaryPhone = phones.entrySet().iterator().next().getValue();
+                info.setPrimaryPhone(primaryPhone);
+            }
         }
         tx.commit();
 

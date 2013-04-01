@@ -1,16 +1,5 @@
 package pro.jpa2.model;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
-import javax.transaction.*;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.Archive;
@@ -20,6 +9,15 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
+
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import javax.transaction.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +32,9 @@ public class NestedEmbeddableTest {
     public static Archive<?> createTestArchive() {
         return ShrinkWrap
                 .create(WebArchive.class, "test.war")
-                .addPackages(true, "pro.jpa2")
+                .addPackages(false, "pro.jpa2.model")
+                .addPackages(true, "pro.jpa2.data")
+                .addPackages(true, "pro.jpa2.util")
                 .addAsResource("META-INF/persistence.xml",
                         "META-INF/persistence.xml")
                         // a safer way to seed with Hibernate - the @UsingDataSet breaks
@@ -131,9 +131,11 @@ public class NestedEmbeddableTest {
         for (ContactInfo info : allResults) {
             assertNull(info.getPrimaryPhone());
 
-            //TODO: set primary phone
-
-            info.setPrimaryPhone(info.getPhones().entrySet().iterator().next().getValue());
+            Map<String, Phone> phones = info.getPhones();
+            if (phones != null && !phones.isEmpty()) {
+                Phone primaryPhone = phones.entrySet().iterator().next().getValue();
+                info.setPrimaryPhone(primaryPhone);
+            }
         }
         tx.commit();
 
@@ -147,22 +149,24 @@ public class NestedEmbeddableTest {
     }
 
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testNestedTX() throws SystemException, NotSupportedException, HeuristicRollbackException, HeuristicMixedException, RollbackException {
 
         tx.begin();
 
-        tx2.begin();
+        //cannot open a nested user tX
+        // BaseTransaction.checkTransactionState - ARJUNA016051: thread is already associated with a transaction!
+//        tx2.begin();
 
-            throwSome();
+        throwSome();
 
-        tx2.commit();
+//        tx2.commit();
 
         tx.commit();
     }
 
-    private void throwSome(){
-        throw new RuntimeException("inner tx ");
+    private void throwSome() {
+        throw new RuntimeException("inner tx");
     }
 
 

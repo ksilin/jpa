@@ -1,4 +1,4 @@
-package pro.jpa2.data.inheritance;
+package pro.jpa2.model.inheritance;
 
 import java.util.List;
 
@@ -18,8 +18,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 
-import pro.jpa2.model.inheritance.FullTimeEmployee;
-
 /**
  * Testing setting parameters for JPA queries - named and numbered params
  *
@@ -32,7 +30,9 @@ public class MappedSuperclassTest {
 	public static Archive<?> createTestArchive() {
 		return ShrinkWrap
 				.create(WebArchive.class, "test.war")
-				.addPackages(true, "pro.jpa2.inheritance")
+				.addPackages(true, "pro.jpa2.model.inheritance")
+				.addPackages(true, "pro.jpa2.data")
+				.addPackages(true, "pro.jpa2.util")
 				.addAsResource("META-INF/persistence.xml",
 						"META-INF/persistence.xml")
 				// a safer way to seed with Hibernate - the @UsingDataSet breaks
