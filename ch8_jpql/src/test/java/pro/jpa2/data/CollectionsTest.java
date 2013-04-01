@@ -229,19 +229,20 @@ public class CollectionsTest {
         Project p2 = new Project();
         p2.setId(1);
 
+        //does not work
         String queryString = "SELECT e FROM Employee e WHERE :project IN e.projects";
         TypedQuery<Employee> query3 = em.createQuery(queryString,
                 Employee.class);
         query3.setParameter("project", p2);
 
-        List<Project> queryByExampleProjects = new ArrayList<Project>();
-        for (int i = 0; i < 3; i++) {
-            Project example = new Project();
-            example.setId(i);
-            queryByExampleProjects.add(example);
-        }
-
-        query3.setParameter("projects", queryByExampleProjects);
+//        List<Project> queryByExampleProjects = new ArrayList<Project>();
+//        for (int i = 0; i < 3; i++) {
+//            Project example = new Project();
+//            example.setId(i);
+//            queryByExampleProjects.add(example);
+//        }
+//
+//        query3.setParameter("projects", queryByExampleProjects);
 
         List<Employee> emp3 = query3.getResultList();
         log.info("found the employees again: {}", emp3);
