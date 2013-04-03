@@ -1,6 +1,5 @@
 package pro.jpa2.model.derived;
 
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -20,9 +19,6 @@ public class Employee {
 	private int id;
 	private String name;
 	private long salary;
-
-	@Embedded
-	private ContactInfo contactInfo;
 
 	public int getId() {
 		return id;
@@ -74,13 +70,5 @@ public class Employee {
 		if (id != other.id)
 			return false;
 		return true;
-	}
-
-	public ContactInfo getContactInfo() {
-		return contactInfo;
-	}
-
-	public void setContactInfo(ContactInfo contactInfo) {
-		this.contactInfo = contactInfo;
 	}
 }

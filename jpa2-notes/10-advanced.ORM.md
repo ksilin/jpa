@@ -20,7 +20,7 @@ The escaping looks a bit different in XML:
 
 When a DB is set to generally accept case-specific identifiers, it might be worth it to use a special setitng in the XML mapping file, instead of escaping all the ids:
 
-<delimited-identifiers/>
+`<delimited-identifiers/>`
 
 Remember to remove the existing double qoutes when switching the feature on.
 
@@ -62,12 +62,12 @@ Example: Employee with country.wide unique Ids, where teh full key is the Countr
 
 The basic type of PK as an **id class**. All fields that mark the entitiy are marked with the `@Id` annotation. The entitiy defines it's Id class with the `@IdClass(EmployeeId.class)` annotation.
 
-When implementing the class, we can omit the settins for the attributes of the IdClass (p.279 ok, why wouldnt I want it to be possible to change a country or the id of an employee?).
+When implementing the class, we can omit the settings for the attributes of the IdClass (p.279 ok, why wouldnt I want it to be possible to change a country or the id of an employee?).
 
 ## Embedded Id class
 
-If the entity contains a single field with the type of the PK class. It is indicated with `@EmbeddeId`. The PK embeddable msut contain all attributes that constitute the PK.
-The PK class is annotated with `@Embedable`. It'a ttributes do not have to be anotated with `@Id`.
+If the entity contains a single field with the type of the PK class. It is indicated with `@EmbeddeId`. The PK embeddable must contain all attributes that constitute the PK.
+The PK class is annotated with `@Embedable`. It's attributes do not have to be anotated with `@Id`.
 
 An embeddable id class can be reused by multiple entities. They can also override the mapping attributes.
 
@@ -79,7 +79,7 @@ having to reference the attributes of the Id with a dot operator: "employee.id.c
 
 If the PK contains FKs to other entities, the identifier is called **derived**. The entitiy containing the FK is called **dependent**. The **parent** entity is target of a `*-1` or `1-1` relation. The relationship may be the only PK, or it may consist of several attributes.
 
-A dependent entitiy cannot be persisted without a parent entity. It as undefined to modify the PK  of an existing entity. Once the entity is persisted, the relation should not be reset.
+A dependent entitiy cannot be persisted without a parent entity. It is undefined to modify the PK  of an existing entity. Once the entity is persisted, the relation should not be reset.
 
 //TODO - I wonder what happens then
 

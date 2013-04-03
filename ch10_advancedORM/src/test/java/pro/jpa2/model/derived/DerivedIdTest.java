@@ -15,6 +15,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.transaction.UserTransaction;
+import javax.validation.ConstraintViolationException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class DerivedIdTest {
                 .addAsResource("META-INF/persistence.xml",
                         "META-INF/persistence.xml")
                         // a safer way to seed with Hibernate - the @UsingDataSet breaks
-                .addAsResource("testSeeds/embeddables.sql",
+                .addAsResource("testSeeds/derivedId.sql",
                         "import.sql")
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
     }
@@ -51,158 +52,23 @@ public class DerivedIdTest {
     @Inject
     private Logger log;
 
-    // just to see if test is working at all
-    @Test
-    public void testEntitiesInPlace() throws Exception {
-        log.warn("------------------------------------------------------------------");
-        assertEntity(Employee.class, 3);
-        assertEntity(Phone.class, 4);
-
-        for (Employee e : getAll(Employee.class)) {
-            assertNotNull(e.getContactInfo());
-        }
-    }
-
-    @Test
-    public void contactInfoShouldBeNavigableFromEmployeeQuery() throws Exception {
-
-        String queryString = "SELECT e.contactInfo FROM Employee  e";
-
-        TypedQuery<ContactInfo> query = em.createQuery(queryString, ContactInfo.class);
-        List<ContactInfo> allResults = query.getResultList();
-
-        for (ContactInfo info : allResults) {
-            log.info("contact info: {}", info);
-        }
-        assertEquals(3, allResults.size());
-    }
-
-    @Test
-    public void phonesShouldBeNavigableFromEmployee() throws Exception {
-
-        //working with detached entities, so prefetch the association
-        String queryString = "SELECT DISTINCT e FROM Employee  e JOIN FETCH e.contactInfo.phones";
-
-        TypedQuery<Employee> query = em.createQuery(queryString, Employee.class);
-        List<Employee> allResults = query.getResultList();
-
-        for (Employee employee : allResults) {
-            log.info("employee: {}", employee);
-            Collection<Phone> entries = employee.getContactInfo().getPhones().values();
-            for (Phone p : entries) {
-                log.info("employee phone: {}", p);
-            }
-        }
-        assertEquals(3, allResults.size());
-    }
-
-    //this throws an exception due to a bug in hibernate before 4.1.4.Final
-    //https://hibernate.onjira.com/browse/HHH-5396
     @Test(expected = Exception.class)
-    public void phonesShouldBeNavigableFromEmployeeQueryOverContactInfo() throws Exception {
-
-        String queryString = "SELECT KEY(p) FROM Employee e JOIN e.contactInfo.phones AS p ";
-//        String queryString = "SELECT KEY(e.contactInfo.phones) FROM Employee e";
-
+    public void employeeHistoryShouldNotBePersistableUnlessRelationToFKIsSet() throws Exception {
+        EmployeeHistory history = new EmployeeHistory();
         tx.begin();
-        TypedQuery<Phone> query = em.createQuery(queryString, Phone.class);
-        List<Phone> allResults = query.getResultList();
-
-        for (Phone phone : allResults) {
-            log.info("found phone: {}", phone);
-        }
+        // throws a ConstraintViolationException - NULL is not allowed in column EMP_ID
+        em.persist(history);
         tx.commit();
     }
 
-    //
     @Test
-    public void changesOnContactInfoShouldBeReflectedOnEmployee() throws Exception {
-
-        String queryString = "SELECT e.contactInfo FROM Employee  e";
+    public void employeeHistoryShouldBePersistableWithRelationToFK() throws Exception {
+        EmployeeHistory history = new EmployeeHistory();
 
         tx.begin();
-        TypedQuery<ContactInfo> query = em.createQuery(queryString, ContactInfo.class);
-        List<ContactInfo> allResults = query.getResultList();
-
-        for (ContactInfo info : allResults) {
-            assertNull(info.getPrimaryPhone());
-
-            Map<String, Phone> phones = info.getPhones();
-            if (phones != null && !phones.isEmpty()) {
-                Phone primaryPhone = phones.entrySet().iterator().next().getValue();
-                info.setPrimaryPhone(primaryPhone);
-            }
-        }
+        Employee employee = em.createQuery("SELECT e FROM Employee e", Employee.class).getResultList().get(0);
+        history.setEmployee(employee);
+        em.persist(history);
         tx.commit();
-
-//        tx.begin();
-//        allResults = query.getResultList();
-//
-//        for (ContactInfo info : allResults) {
-//            assertNotNull(info.getPrimaryPhone());
-//        }
-//        tx.commit();
-    }
-
-
-    //The embedded is not queryable directly.
-    @Test(expected = Exception.class)
-    public void contactInfoShouldNotBeQueryable() throws Exception {
-
-        String queryString = "SELECT ci FROM ContactInfo  ci";
-
-        TypedQuery<ContactInfo> query = em.createQuery(queryString, ContactInfo.class);
-        query.getResultList();
-    }
-
-    //querying for attachment to the PU is illegal
-    @Test(expected = Exception.class)
-    public void contactInfoIsNotAnEntity() throws Exception {
-
-        String queryString = "SELECT e.contactInfo FROM Employee  e";
-
-        TypedQuery<ContactInfo> query = em.createQuery(queryString, ContactInfo.class);
-        List<ContactInfo> allResults = query.getResultList();
-
-        log.info("contact info is attached: {}", em.contains(allResults.get(0)));
-    }
-
-    // The Phone has a reference on Employee. The ContactInfo, as part of Employee
-    // has a reference to the primaryPhone
-    // This creates a circular FK relation and one of the sides has to go empty initially
-    @Test
-    public void contactInfoShouldNotHaveThePrimaryPhoneSet() throws Exception {
-
-        String queryString = "SELECT e.contactInfo FROM Employee  e";
-
-        TypedQuery<ContactInfo> query = em.createQuery(queryString, ContactInfo.class);
-        List<ContactInfo> allResults = query.getResultList();
-
-        for (ContactInfo info : allResults) {
-            assertNull(info.getPrimaryPhone());
-        }
-    }
-
-
-    // setting the class name per parameter does not work :(
-    public <T> void assertEntity(Class<T> klazz, final int expectedSize) {
-
-        List<T> allResults = getAll(klazz);
-        assertNotNull(allResults);
-        assertEquals(expectedSize, allResults.size());
-    }
-
-    private <T> List<T> getAll(Class<T> klazz) {
-
-        // you cannot parametrize the class of the query using regular params,
-        // like in the WHEN clause
-        // String queryString = "SELECT e FROM :className  e";
-        String queryString = "SELECT e FROM " + klazz.getSimpleName() + "  e";
-
-        TypedQuery<T> query = em.createQuery(queryString, klazz);
-        // does not work in the FROM clause, seee above
-        // query.setParameter("className", klazz.getSimpleName());
-        List<T> allResults = query.getResultList();
-        return allResults;
     }
 }

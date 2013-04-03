@@ -11,8 +11,10 @@ import java.io.Serializable;
 @Entity
 public class EmployeeHistory implements Serializable {
 
-    //the actual PK in the table is going to have the same type as the PK of the EMployee
+    //the actual PK in the table is going to have the same type as the PK of the Employee
+    // in this case an int
     @Id
+    // may as well be ManyToOne
     @OneToOne
     @JoinColumn(name = "EMP_ID")
     private Employee employee;

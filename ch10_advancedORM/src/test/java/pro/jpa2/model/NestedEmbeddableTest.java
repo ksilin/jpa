@@ -225,7 +225,7 @@ public class NestedEmbeddableTest {
         String queryString = "SELECT e FROM " + klazz.getSimpleName() + "  e";
 
         TypedQuery<T> query = em.createQuery(queryString, klazz);
-        // does not work in the FROM clause, seee above
+        // does not work in the FROM clause, see above
         // query.setParameter("className", klazz.getSimpleName());
         List<T> allResults = query.getResultList();
         return allResults;
