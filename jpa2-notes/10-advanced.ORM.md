@@ -108,6 +108,14 @@ referred to by a `@MapsId` annotation on the corresponding relationship attribut
 
 ### Shared Primary key
 
+EmployeeHistory has a single Id ref to the Employee entity -> EmployeeHistory is a dependent antity and cannot be persisted without having the employee attribute set. See DerivedIdTest.
+
+The primary key of the EmployeeHistory is going to have the same type (and value) as the PK of the Employee.
+
+// TODO - try a second example - Project and Department. The Project should have an embedded Id. A ProjectHistory should have the Project as it'S PK - see DDL 
+
+
+
 ...fast forward to p300 - preparing to implement a composite
 ## Inheritance
 

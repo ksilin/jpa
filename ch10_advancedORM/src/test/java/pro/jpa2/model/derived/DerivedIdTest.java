@@ -71,4 +71,12 @@ public class DerivedIdTest {
         em.persist(history);
         tx.commit();
     }
+
+    @Test
+    public void testProjectHistory(){
+
+
+
+    }
+
 }
