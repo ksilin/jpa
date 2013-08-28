@@ -199,44 +199,49 @@ As the reverse side, the 1-side has to define the mappedBy prop:
 
 #### ManyToMany mappings
 
-@ManyToMany annotation on both sides
+`@ManyToMany` annotation on both sides
 
-There is no way to implement a *-* relationship with join columns. The only way is a join table. Thus there is no way to determine the owner side, so we just have to pick one, arbitrarily by providing a **mappedBy** attribute to the mapping.
+There is no way to implement a *-* relationship with join columns. The only way is a join table. Thus there is no way to determine the owner side, so we just have to pick one arbitrarily by providing a `mappedBy` attribute to the mapping.
 
-the **@JoinTable** annotation is not necessary and is used only to configure the table. BTW, other mappings can use a join table as well, but it's far less common.
+the `@JoinTable` annotation is not necessary and is used only to configure the table. BTW, other mappings can use a join table as well, but it's far less common.
 
 example:
+```
 	@ManyToMany
 	@JoinTable(name = "EMP_PROJ", joinColumns = @JoinColumn(name = "EMP_ID"), inverseJoinColumns = @JoinColumn(name = "PROJ_ID"))
 	private List<Project> projects;
-
-joinColumns can encompass multiple join columns - for multipart PKeys
+```
+`joinColumns` can encompass multiple join columns - for multipart PKeys
 
 Default name for the join table : <Owner>_<Inverse>. The join column name defaults remain (field name plus the name of the primary key column of the target)
 
 
 
-####OneToMany - unidirectional
+#### Unidirectional collection mapping
 
-if the @OneToMany side does not include the mappedBy attribute, the relation is unidirectional. 
-The join table must still be used, but it is used only by one entity
+if the `@OneToMany` side does not include the `mappedBy` attribute, the relation is unidirectional. 
+A join table must be used because there is no join column, but it is used only by the dependent entity.
+
+The same is valid for `@ManyToMany` 
 
 #### Lazy relationships
 
 lazy fetching is more performance relevant for relations than it is for properties. IF not specified, the loading is guaranteed to be eager, if specified, it' a hint to the provider.
 It is common for bidirectional relationships to be lazy on the one side and eager on the other.
 
+calling  getter to access a lazy attribute is not enough to guarantee it's presence (it might be a proxy). You must perform an operation on it to be sure.
+
 //TODO : what is the case for lazy relationships after detaching - are they loaded on detachment or do they remain set to null?
 
 ### Embedded objects
 
-EOs have no Id of their own and depend on an entity for that
+EOs have no Id of their own and depend on an entity for identification.
 
-Embedded types can be reused, but not the instances (denoted as composition in UML)! (so what happens if you try?)
+No other entity may hold a reference an instance of an embededd type (denoted as composition in UML)! (TODO - what happens if you try?)
 
-Do not define Embedded Objects as part of inheritance hierarchies - it is unportable and requires lots of effort to get right (hmm, how is it meant?)
+Do not define Embedded Objects as part of inheritance hierarchies - it is unportable and requires lots of effort to get right (hmm, what does it mean?)
 
-As a single Embeddable may be used in different entities, we might need to adapt the mapping using the **@AttributeOvierrides** annotation inside the embedding entity.
+As a single `Embeddable` may be used in different entities, we might need to adapt the mapping using the `@AttributeOvierrides` annotation inside the embedding entity (p.105, 106)
 
 
  
