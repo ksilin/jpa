@@ -8,13 +8,13 @@ Persistence Context (PC) - managed set of entity instances
 Entity manager (EM) - manages a PC
 managed bean = contained in a PC
 
-If a PC is in a TX, it's contents are synchronized with the DB. The PC is not visible to the App and has to be addressed over the EM.
+If a PC is in a TX, it's contents are synchronized with the DB. The PC is not visible to the app and has to be addressed over the EM.
 
-JPA defines 3 types of EMs:
+JPA defines 3 types of EMs. The type of PC/EM is controlled by the **type** attribute of the `@PersistenceContext` annotation:
 
 ### Transaction managed EMs
 
-retrieved using the @PersistenceContext annotation
+retrieved using the `@PersistenceContext(type=PersistenceContextType.TRANSACTION)` annotation
 
 #### transaction scoped
 
@@ -26,45 +26,45 @@ Every time an operation is invoked on the EM, the proxy checks with the TX if a 
 
 PC lifecycle is determined by the lifecycle of the controlling stateful bean. The extended PC is designed to keep entitiy fields inside stateful beans attached (otherwise they must be looked up for each TX)
 
-The type of PC is controlled by the **type** attribute of the @PersistenceContext annotation:
-    @PersistenceContext(type=PersistenceContextType.EXTENDED) 
-    PersistenceContextType.TRANSACTION is the other option.
+`@PersistenceContext(type=PersistenceContextType.EXTENDED)` 
 
 Stateful beans were shunned for a long time for performance problems. This is no longer true, so using stateful beans with the EM will probably emerge as a best practice
 
-### application-managed (p.136)
+### Application-managed EMs(p.136)
 
-EMs created by calling EMF.createEntityManager are called application-managed.
+EMs created by calling `EMF.createEntityManager` are called application-managed.
 
 There are differences in acquiring the EM in SE and EE nevironments:
 
 #### SE:
 
-EMF emf = Persistence.createEntityManagerFactory("PUName");
-EM em = emf.createEntityManager();
+```
+        EMF emf = Persistence.createEntityManagerFactory("PUName");
+        EM em = emf.createEntityManager();
 ...
-em.close();
-emf.close();
+        em.close();
+        emf.close();
+```
 
-.createEntityManagerFactory can accept either the name of the PU (then you need a persistence.xml) or a Map of propetries for the persistence, adding to or overriding the ones defined in the persistence.xml
+`createEntityManagerFactory` can accept either the name of the PU (then you need a persistence.xml) or a Map of propetries for the persistence, adding to or overriding the ones defined in the persistence.xml
 
-The active set of properties can be retrieved by callign .getProperties() on the EM.
+The active set of properties can be retrieved by calling `getProperties()` on the EM.
 
 #### EE:
+```
+        @PersistenceContext
+        EMF emf;
 
-@PersistenceContext
-EMF emf;
-
-EM em = emf.getEntityManager();
+        EM em = emf.getEntityManager();
 ...
-em.close();
+        em.close();
+```
 
-Note - always close the application-managed EM!
-In SE applications, the EMF must be closed as well.
+Note - **always** close application-managed EMs in SE and EE applications!
 
 The PC of an application managed EM will remain until the EM is explicitly closed, independent of TXs
 
-Application-amanaged EMs are rarely needed in EE apps.
+Application-managed EMs are rarely needed in EE apps.
 
 ## TX management
 
@@ -81,7 +81,7 @@ There can be only one PC across a TX, that is associated and propagated.
 
 ### TX-scoped PCs
 
-Created by the container and closed when TX ends. PC creatin is lazy - the EM will onyl create one if a method is called on teh EM and there is no PC available (all subsequent operations will then use this PC). This works for bean and container TX.
+Created by the container and closed when TX ends. PC creation is **lazy** - the EM will only create one if a method is called on the EM and there is no PC available (all subsequent operations will then use this PC). This works for bean and container TX.
 
 Propagating a PC makes sharing an EM instance unnecessary.
 
@@ -89,19 +89,21 @@ Here we have to be carefy with REQUIRES_NEW. If a bean method will open a new TX
 
 ### Extended PC
 
-The transaction association for extended PCs is eager - the container associates the PC with the TX as soon as a method call starts on the bean (for container-managed TX, on TX.begin() otherwise)
+The transaction association for extended PCs is **eager** - the container associates the PC with the TX as soon as a method call starts on the bean (for container-managed TX, on TX.begin() otherwise)
 
-It is possible to provide the extended PC of a stateless bean as the propagated PC for other,  transaction scoped EMs - the extended PC has to be the first PC that is encountered by the service call. (p. 141)
+It is possible to provide the extended PC of a stateless bean as the propagated PC for other, transaction scoped EMs - the extended PC has to be the first PC that is encountered by the service call. This is the reason for eager loading of the extended PC - it will be already bound when the first call to the EM is executed. The transaction-scoped entity manager will share the extended PC and will be able to see all entities in it.(p. 142)
 
 ### PC collision with extended PCs
 
-Collisions will occur if a bean with a TX-scoped PC calls the stateful bean with the extended PC. The EM will check try to eagerly attach it's own extended PC and will fail, as there is already one available -> Exception (TODO: model this! - p.142)
+Only one PC can be propagated with a JTA transaction, while the extended PC will always try to make itself the active PC. This can lead to collisions. 
 
-Thus, Stateful beans with extended PCs should be the first persistence-related beans being called in service call.
+Collisions will occur if a bean with a TX-scoped PC calls the stateful bean with the extended PC. The EM will check try to eagerly attach it's own extended PC and will fail, as there is already one available -> an Exception will be thrown (TODO: model this! - p.142)
 
-This limits the use of stateful beans wiht extended PC. A workaround to allow other beans call the stateful bean is to anotate the methods of the Stateful bean with REQUIRES_NEW - then it will always lift the current TX and provide the extended PC for all sequential calls. Using REQUIRES_NEW a lot may have a negative impact on the performance.
+Thus, Stateful beans with extended PCs should always be the first persistence-related beans being called in service call, otherwise they should not be called by other, TX-scoped beans.
 
-If the stateful bean does not call other EJBs, it might be woth it to annotate it's methods with NOT_SUPPORTED (p.142)
+This limits the use of stateful beans wiht extended PC. A workaround to allow other beans call the stateful bean is to anotate the methods of the Stateful bean with `REQUIRES_NEW` - then it will always lift the current TX and provide the extended PC for all sequential calls. Using `REQUIRES_NEW` a lot may have a negative impact on the performance.
+
+If the stateful bean does not call other stateful beans and does not need to propagate it's PC, it might be woth it to annotate it's methods with `NOT_SUPPORTED` (p.142)
 
 ### PC inheritance (with multiple extended PCs)
 
