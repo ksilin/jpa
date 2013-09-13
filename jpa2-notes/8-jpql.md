@@ -1,9 +1,10 @@
 JPQL
 ====
 
-## Into
+## Intro
 
 ### Terminology
+
 Queries fall into 4 categories
 
 * select
@@ -11,7 +12,7 @@ Queries fall into 4 categories
 * update
 * delete
 
-Aggregate and select queries are sometimes called report queries. THe set of entities and embeddables the queries operate on are called "abstact persistence schema". 
+Aggregate and select queries are sometimes called report queries. The set of entities and embeddables the queries operate on are called "abstact persistence schema". 
 
 Entities may be named using the `name` attribute of the `@Entity` annotation. The unqualified class name is the default entity name. Simple properties of entities are called "state fields", properties that are relations are called "association fields".
 
@@ -33,25 +34,34 @@ In `SELECT e FROM Employee e`, the `e` (called alias in SQL) is called **identif
 
 The building blocks of queries. They are used to navigate along relationships or to properties. 
 
-Navigations to a property is called a **state field path**.
+Navigation to a property is called a **state field path**.
 Navigation to a singe entity is called  **single-valued association path**
 Navigation to a collection of entities is called  **collection-valued association path** 
 
 The navigation is performed using the dot(**.**) operator. The navigation stops at state field paths and collection-valued association paths. 
 
-The keyword `OBJECT` has no impact on the query but may be used as a visual clue to signify that an entity is expected. Unfortunately, `OBJECT` is restricted to id vars (though e.department would return an entity, you cannot use `OBJECT(e.department)` - only `e`) and thus not very useful. It exists mainy for compatibilty reasons, as it was assumed that SQL would support it.
+The keyword `OBJECT` has no impact on the query but may be used as a visual clue to signify that an entity is expected. Unfortunately, `OBJECT` is restricted to id vars (though `e.department` would return an entity, you cannot use `OBJECT(e.department)` - only `e`) and thus not very useful. It exists mainly for compatibilty reasons, as it was assumed that SQL would support it.
 
 The `DISTINCT` operator is used to exclude duplicates:
 `SELECT DISTINCT e.department FROM Employee e`
 
 The result type of a select query may not include collection-valued paths:
-`SELECT d.employees FROM Department d` is illegal **see BasicJpqlTest - it sems to be possible after all**. This restriction prevent the provider from combining successive DB rows to a single result (and why would that be bad?) -> SO
+`SELECT d.employees FROM Department d` is illegal 
+**see BasicJpqlTest - it sems to be possible after all**. 
 
-When a select query returns an embeddable , like in `SELECT e.address FROM Employee e`, it's important to note that the embeddable **will not be managed**. In order to obtain managed embeddables, retrieve the managed embedding entities and navigate from there.
+This restriction prevent the provider from combining successive DB rows to a single result (and why would that be bad? - performance probably) -> SO
+
+When a select query returns an embeddable, like in `SELECT e.address FROM Employee e`, it's important to note that the embeddable **will not be managed**. In order to obtain managed embeddables, retrieve the managed embedding entities and navigate from there.
 
 ### combining expressions (Projection queries)
+
 ### Ctor expressions
+
+`SELECT NEW com.example.EmployeeDetails(e.name, e.salary, e.department.name) FROM Employee e`
+
 ### Ingeritance and polymorphism 
+
+JPA supports polymorphic queries and can return different subtypes of an entity.
 
 Restricting queries to a particular class of a hierarchy:
 
@@ -65,17 +75,19 @@ Consists of id vars and join clause declarations. Every query must have at least
 
 Joins are queries combining results from ultiple entities. They occur whenever:
 
-* more than one range var decls are listed in the `FROM` and appear in the `SELECT`
+* more than one range var declarations are listed in the `FROM` and appear in the `SELECT`
 * `JOIN` operator is used to extend the entitiy through a path expression (how?)
 * a path expr. navigates along an association field to the same or different entity. 
 *  `WHERE` conditions compare attributes of different id vars.
 
 Joins may be specified explicitly using the `JOIN` keyword, or implicitly as result of path navigation.
 
-**Inner joins** return entites satisfying all join conditions. Path navigation from one entity to another is a form of inner join. An **outer join** is a set of all entities satisfying all join condtions plus all instances of one of the entities (called the **left** type). Absence of join conditions will produce a cartesian product (all possible combinations of the entities -> M*N results). Cartesian products are rarely used in JPQL. 
+**Inner joins** return entities satisfying all join conditions. Path navigation from one entity to another is a form of inner join. An **outer join** is a set of all entities satisfying all join condtions plus all instances of one of the entities (called the **left** type). Absence of join conditions will produce a cartesian product (all possible combinations of the entities -> M*N results). Cartesian products are rarely used in JPQL. 
 
- More on the `JOIN` operator wiht examples: 217-222:
+ More on the `JOIN` operator with examples: 217-222:
+
 #### Inner joins
+
 ##### Join op. on collection association fields
 
 `SELECT p FROM Employee e JOIN e.phones p` eqivalent to 
@@ -97,6 +109,8 @@ As we see, there is not much to gain in preferring explicit joins for single val
 
 `SELECT DISTINCT e.department FROM Project p JOIN p.employees e WHERE p.name='Release1' AND e.address.state='CA'` 
 
+// TODO- why is this an outer join?
+
 Selecting the departments of all employees from California who work on the project Release1.
 This query conatins 4 logical joins (and could involve even more tables if relations with join tables are involved). +p219
 
@@ -112,7 +126,7 @@ These are often used if there is no explicit relation between the entities. E.g.
 #### Map joins
 
 Use `KEY` and `VALUE` operators to access the enties of a map. `VALUE` is the default. See p.221.
-To access the whole entry, use the `ENTRY` keyword. It can be only used in `SELECT` clauses. `KEY` and `VALUE` can also be used in `WHERE` and `HAVING` clauses. JPA is not able to join the source entitiy against map values.
+To access the whole entry, use the `ENTRY` keyword. It can be only used in `SELECT` clauses. `KEY` and `VALUE` can also be used in `WHERE` and `HAVING` clauses. JPA is not able to join the source entity against map values.
 
 #### Outer joins p.221
 
@@ -122,15 +136,15 @@ Used to optimize DB access and prepare query results to detachment. Fetch joins 
 
 `SELECT e FROM Employee e JOIN FETCH e.address`
 
-This query will be replaced by the provider wiht a query with a regular join, where one of the returned entities would then be dropped:
+This query will be replaced by the provider with a query with a regular join, where one of the returned entities would then be dropped:
 
 ` SELECT e, a FROM Employee e JOIN e.address a` 
 
 Selecting all departments and eagerly fetching the employees requires an outer join, as departments with no employees should be returned as well (and would not be included due to a join).
 
 `SELECT d, FROM Department d LEFT JOIN FETCH d.employees` would be turned by the provider into:
-`SELECT d, e FROM Department d LEFT JOIN d.employees e` ...it' a bit more complicated in fact, as we would like to select disctinct departments, so there is no SQL equivalent to a fetch query, thats why the employees are fetched too and then dropped.
-This "extra" work w´may result in a performance issue for large result sets. Due to this implications, if reations require eager fetching, consider marking them as such.
+`SELECT d, e FROM Department d LEFT JOIN d.employees e` ...it' a bit more complicated in fact, as we would like to select disctinct departments, so there is no SQL equivalent to a fetch query, that is why the employees are fetched too and then dropped.
+This "extra" work may result in performance issues for large result sets. Due to this implications, if reations require eager fetching, consider marking them as such.
 
 ## WHERE clause
 
@@ -139,7 +153,7 @@ This "extra" work w´may result in a performance issue for large result sets. Du
 
 Operator precedence:
 
-Navigation/dot `.` > Unary `+` and `-` > `*` and `/` > `+` and `-` (add&subtract) > 
+ Navigation/dot `.` > Unary `+` and `-` > `*` and `/` > `+` and `-` (add&subtract) > 
 Comparison (<, >, = etc, BETWEEN, LIKE, IN, IS NULL, IS EMPTY, MEMBER, including the variants with `NOT`) > `AND`, `OR`, `NOT`
 
 #### BETWEEN
@@ -162,14 +176,14 @@ Subqueries are complete queries (in parens) that are embedded in a conditional e
 
 `SELECT e FROM Employee e WHERE e.salary = (SELECT MAX(emp.salary) FROM Employee emp)`
 
-The scope of an id var extends to all subqueries. By defining an id var, a subquery can override the id var of the same name from the main query. However this is not required to be implemented by the provider, so it' better not to rely on such overrriding.
+The scope of an id var extends to all subqueries. By defining an id var, a subquery can override the id var of the same name from the main query. However this is not required to be implemented by the provider, so it' better not to rely on such overriding.
 
-Get all employees whi have a cell phone:
-` SELECT e FROM Employee e WHERE EXISTS (SELECT 1 FROM Phone p.employee = p AND p.type = 'cell')`
+Get all employees who have a cell phone:
+` SELECT e FROM Employee e WHERE EXISTS (SELECT 1 FROM Phone p.employee = e AND p.type = 'cell')`
 
-This query also illustrates an interesting technique. When we are only interested in existance of sth, and are using EXISTS, returning a literal `1` is common to signify that the actual results of the subquery are not relevant.
+This query also illustrates an interesting technique. When we are only interested in existence of sth, and are using `EXISTS`, returning a literal `1` is common to signify that the actual results of the subquery are not relevant.
 
-This query could have been written using joins and the `DISTINCT` operator. Often, when a join is used for iltering, there is an equivalent subquery condition.
+This query could have been written using joins and the `DISTINCT` operator. Often, when a join is used for filtering, there is an equivalent subquery condition.
 
 ` SELECT e FROM Employee e WHERE EXISTS (SELECT 1 FROM e.phones p WHERE p.type = 'cell')`
  
@@ -195,18 +209,19 @@ Used to check if a single valued path expression is member of a collection. The 
 
 ##### ANY, ALL, SOME
 
-Compares WHERE clause to results of a subquery. ANY and SOME are aliases - identical.
+Compares `WHERE` clause to results of a subquery. `ANY` and `SOME` are aliases for each other.
 
-// finding a manager who has subordinates commanding a larger salary then himself
+// finding a manager who has subordinates commanding a larger salary then himself:
+
 `SELECT e FROM Employee e WHERE e.directs IS NOT EMPTY AND e.salary < ANY (SELECT d.salary FROM e.directs d)`
 
 ### Scalar expressions
 
-Basically anything that results on a single scalar value. Subqueries resulting in single scalar values may be used only in the WHERE clause, never in the SELECT.
+Basically anything that results on a single scalar value. Subqueries resulting in single scalar values may be used only in the `WHERE` clause, never in the `SELECT`.
 
 #### Literals
 
-Single quotes are used to demarcate string literals. Boolean literals are `TRUE` and `FALSE`. Nubers can be expressed similar to the regular java syntax.
+Single quotes are used to demarcate string literals. Boolean literals are `TRUE` and `FALSE`. Numbers can be expressed similar to the regular java syntax.
 
 Queries also can reference `Enum` types. `... WHERE e.type = com.example.EmployeeType.FULLTIME`
 
@@ -219,13 +234,14 @@ Temporal literals use the JDBC escape syntax. `d` is for date, `t` is for time, 
 
 #### Function expressions - p.230
 
-ABS(num)
-LENGTH(string)
-LOCATE(string1, string2, [start])
-LOWER(string)
-SIZE(collection)
-SUBSTRING(string, start, end)
-
+```
+        ABS(num)
+        LENGTH(string)
+        LOCATE(string1, string2, [start])
+        LOWER(string)
+        SIZE(collection)
+        SUBSTRING(string, start, end)
+```
 and many more
 
 #### CASE expressions
@@ -248,6 +264,7 @@ the condition variable is defined for all WHEN clauses:
 `SELECT p.name, CASE TYPE(p) WHEN DesignProject THEN 'Development'...`
 
 3. COALESCE
+
 `COALESCE(<scalar_expr> {,<scalar_expr>}+)`
 
 The first expression to return a non-null value becomes the result of the expression.
@@ -261,11 +278,11 @@ Here we actually want a name, but if the name is not defined, we use the id as f
 
 It accepts two scalar expressions and resolves both. If the results are equal, the result of the expression is null. Otherwise it is the result of the first expression.
 
-NULLIF can be used to exclude results (see p.233)
+`NULLIF` can be used to exclude results (see p.233)
 
 #### ORDER BY (p.233)
 
-Default sort order is ASC
+Default sort order is `ASC`
 
 Sorting by a single field:
 `SELECT e FROM Employee e ORDER BY e.name DESC`
@@ -273,18 +290,18 @@ Sorting by a single field:
 Sorting by multiple fields:
 `SELECT e FROM Employee e ORDER BY e.salary DESC, e.name DESC`
 
-Note the DESC keyword, on e.salary. If we had separated the ORDER BY arguments by a comma, ASC order would be used per default.
+Note the `DESC` keyword, on `e.salary`. If we had separated the `ORDER BY` arguments by a comma, `ASC` order would have been used per default.
 
 Using aliases for better performance (the variables have to be resolved only once)
 `SELECT e.name, e.salary * 0.05 AS bonus FROM Employee e JOIN e.department d ORDER BY bonus DESC`
 
-Sorting by attributes that are not accessible from the SELECT clause is supposed to be illegal, but it does work for some reason - TODO - clarify on SO
+Sorting by attributes that are not accessible from the SELECT clause is supposed to be illegal, but it does work for some reason - // TODO - clarify on SO
 
 `SELECT e.name FROM Employee e ORDER BY e.salary DESC`
 
 #### Aggregate queries
 
-Aggregate queries are the ones containing either an aggregate function or a GROUP BY clause and/or a HAVING clause
+Aggregate queries are the ones containing either an aggregate function or a `GROUP BY` clause and/or a `HAVING` clause
 
 ```sql
     SELECT <select_expression> 
@@ -308,45 +325,46 @@ All employees are in the single group that defines the range of the aggregate qu
 A complex query is executed in multiple steps:
 
 ```sql
-SELECT d.name, AVG(e.salary)
-FROM Department d JOIN d.employees e
-WHERE e.directs IS EMPTY
-GROUP BY d.name
-HAVING AVG(e.salary) > 50000
+        SELECT d.name, AVG(e.salary)
+        FROM Department d JOIN d.employees e
+        WHERE e.directs IS EMPTY
+        GROUP BY d.name
+        HAVING AVG(e.salary) > 50000
 ```
 
 is executed like this: first the "vanilla" select part is executed:
 
 ```sql
-SELECT d.name, AVG(e.salary)
-FROM Department d JOIN d.employees e
-WHERE e.directs IS EMPTY
+        SELECT d.name, AVG(e.salary)
+        FROM Department d JOIN d.employees e
+        WHERE e.directs IS EMPTY
 ```
 
-then the results are iterated over and the grouping occurs, which passes the data to the AVG function. The result of the AVG is then passed to the HAVING clause.
+then the results are iterated over and the grouping occurs, which passes the data to the `AVG` function. The result of `AVG` is then passed to the `HAVING` clause.
 
 
 #### GROUP BY clause p.236
 
-Determines the aggregetion/breaking down of results.
+Determines the aggregation/breaking down of results.
 
 //TODO - The book says, you cannot group by what is not included in the select clause, but it works. clarify on SO
 
-<Because there are two grouping expressions, the department name and employee salary must be listed in both the SELECT clause and GROUP BY clause>
+"Because there are two grouping expressions, the department name and employee salary must be listed in both the SELECT clause and GROUP BY clause"
 
 #### HAVING clause p.236
 
-Defines a filter to be applied to the grouped results - effectively a secondary WHERE clause. Contrary to the original WHERE clause, the argumants are limited by singlevalused associations listed in the GROUP BY clause....it seems Im misunderstanding this restriction - the query below works just fine (adn is atually listen in the book) but p is not listed in the GROUP BY clause:
+Defines a filter to be applied to the grouped results - effectively a secondary `WHERE` clause. Contrary to the original `WHERE` clause, the arguments are limited by single-valued associations listed in the `GROUP BY` clause....it seems I am misunderstanding this restriction - the query below works just fine (and is actually listed in the book) but `p` is not listed in the `GROUP BY` clause:
 
 ```sql
-SELECT e, COUNT(p)
-FROM Employee e JOIN e.projects p
-GROUP BY e
-HAVING COUNT(p) >= 2
+        SELECT e, COUNT(p)
+        FROM Employee e JOIN e.projects p
+        GROUP BY e
+        HAVING COUNT(p) >= 2
 ```
 #### Update & Delete queries - nothing special p.237-238 
 
 Delete queries are polymorphic - when deleting a base class, the entites of derived classe are also affected.
+
 Delete queries do not honor cascading - they only delete their target entity, but no associations. 
 
 
