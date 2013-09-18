@@ -190,4 +190,68 @@ Cascading joins:
 
 The result type will be the source and target of the last join statement.
 
+Joins across relationships using `Map` are more complex. `MapJoin#key` and `MapJoin#value`.
+
+        SELECT e.name, KEY(p), VALUE(p)
+        FROM Employee e JOIN e.phones p
+
+        `MapJoin<SourceType, KeyType, ValueType>`
+
+        CriteriaQuery<Object> c = cb.createQuery();
+        Root<Employee> emp = c.from(Employee.class);
+        MapJoin<Employee, String, Phone> phone = emp.joinMap("phones");
+        c.multiselect(emp.get("name"), phone.key(), phone.value());
+
+We cannot use `join` and have to use `mapJoin` instead because we only pass the name of the attribute (in this case, 'phones') as a String.
+
+`Collection`, `Set` and `List` are required to use `joinCollection`, `joinSet` and `joinList` methods respectively.
+
+Ther is also a strongly typed version of `join` that is able to handle all joins through a single method -> later.
+
+### Fetch joins
+
+`FetchParent#fetch`
+
+        SELECT e FROM Employee e JOIN FETCH e.address
+
+        CriteriaQuery<Employee>c = cb.createQuery(EMployee.class);
+        Root<Employee> emp = c.from(Employee.class);
+        emp.fetch("address");
+        c.select;
+
+The return type of `fetch` is a `Fetch` object, which is not a `Path` and can not be extended or referenced anywhere else in the query.
+
+        emp.fetch("phones", JoinType.LEFT);
+        c.select(emp).distinct(true);
+
+Here we use an outer join to prevent the query to skip emplyoees without phones.
+
+## WHERE
+
+`AbstractQuery#where` accepts 0 or more `Predicate` objects or a single `Expression<Boolean>` object. Each call to `ehere` will discard previous where expressions.
+
+### Building expressions
+
+see list pp.254-256
+
+### Predicates 
+
+to create a conjuction `Predicate` objects, pass an `Predicate[]` to the `and` method:
+
+        c.where(cb.and(predicates.toArray(new Predicate[0])));
+
+there is a shortcut for that - passing multiple arguments to `where` - they are combined using `and`:
+
+        CriteriaQuery#where(Predicate... restrictions) 
+
+A combined `predicate` can also be built incrementally, using the `CB#conjunction` and `CB#disjunction` methods initially:
+
+        Predicate p = cb.conjunction();
+        ParameterExpression<String> ex = cb.parameter(String.class, "name");
+        p = cb.and(p, cb.equal(root.get("name"), p));
+        ...
+        if(p.getExpressions().size() == 0){
+            throw ...        
+        }
+
 
