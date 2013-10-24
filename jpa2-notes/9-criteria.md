@@ -381,4 +381,13 @@ The `EntityType` instance is not created by this call, only retrieved if it exis
         dept com.acme.PDepartment MANY_TO_ONE
         ...
 
+The persistence metamodel has been available to earlier JPA version, but only internally.
+
+### Strongly typed API overview
+
+The strongly typed API is can be used well with the CB. For example, the `join` method also accepts `SingularAttribute`, `CollectionAttribute`, `SetAttribute`, `ListAttribute` and `MapAttribute`. We will no longer need the ugly type hints.Compare with the version usign `joinMap` from teh start of the chapter.
+
+ 
+
+
 

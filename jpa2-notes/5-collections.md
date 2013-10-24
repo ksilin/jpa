@@ -53,7 +53,19 @@ When keys are entities, only the FKs are stored in the referred table. If the ke
 
 The value type of the `Map` determines the mapping (entity or collection table).
 
+As per Section 2.7, 
+
+* when the map value is a basic type or embeddable class, the `ElementCollection` annotation is used; 
+
+* when the map value is an entity, the `OneToMany` or `ManyToMany` annotation is used. 
+
+* when the value type of the map is a basic type or an embeddable class, a **collection table** is used to map the map.
+
+* when the value type of the map is an entity, a **join table** is used to map the map for a many-to-many relationship or, by default, for a one-to-many unidirectional relationship. If the relationship is a bidirectional one-to-many/many-to-one relationship, by default the map is mapped in the table of the entity that is the value of the map.
+
 ---leaving the boring chapter for later - enjoy from page 116 - 128
+
+
 
 ### Best practices
 

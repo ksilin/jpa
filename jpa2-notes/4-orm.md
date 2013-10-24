@@ -215,7 +215,13 @@ example:
 
 Default name for the join table : <Owner>_<Inverse>. The join column name defaults remain (field name plus the name of the primary key column of the target)
 
+Usage of cscading is restricted for *-* relations:
 
+As per section 2.9:
+
+The relationship modeling annotation constrains the use of the `cascade=REMOVE` specification. The `cascade=REMOVE` specification should only be applied to associations that are specified as `OneToOne` or `OneToMany`. Applications that apply `cascade=REMOVE` to other associations are not portable.
+
+The outcome of removing an entity which has `ManyToOne` or `ManyToMany` relationship annotated with cascade=REMOVE with another entity is unspecified.
 
 #### Unidirectional collection mapping
 
