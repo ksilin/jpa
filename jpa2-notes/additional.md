@@ -46,6 +46,10 @@ Thrown by the persistence provider when an pessimistic locking conflict occurs. 
 
  the `PessimisticLockException` will be thrown if the database locking failure causes transaction-level rollback 
 
+                  extended by javax.persistence.QueryTimeoutException
+
+Thrown by the persistence provider when a query times out and only the statement is rolled back. The current transaction, if one is active, will be **not** be marked for rollback. 
+
                   extended by javax.persistence.RollbackException
 
 Thrown by the persistence provider when EntityTransaction.commit() fails. 
@@ -113,3 +117,42 @@ or:
 ### the 'mappedBy' attribute appears only on the inverse (non-owning) side
 
 ### JoinTable annotation appears only on the owning side
+
+### restrictions on Embeddables straigh from the horse's mouth §2.5
+
+* Embeddables may be used as map keys and map values. 
+
+* Attempting to share an embedded object across entities has undefined semantics.
+
+* An embeddable class may be used to represent the state of another embeddable class.
+
+* An embeddable class (including an embeddable class within another embeddable class) may contain a collection of a basic type or other embeddable class
+
+* An embeddable class may contain a relationship to an entity or collection of entities.
+
+* the relationship from the referenced entity is
+to the entity that contains the embeddable instance(s) and not to the embeddable itself
+
+* An embeddable class that is used as an embedded id or as a map key must not contain such a relationship.
+
+* Null comparisons over instances of embeddable class types are not supported.
+
+A null comparison expression tests whether or not the single-valued path expression or input parameter is a NULL value
+
+### there seems to be no defualt locking behavioiur.
+
+I though it would be OPTIMISTIC, but im not so sure:
+
+http://stackoverflow.com/questions/13568475/jpa-and-default-locking-mode
+
+### more resources on locking and tx isolation:
+
+http://en.wikibooks.org/wiki/Java_Persistence/Locking#Isn.27t_database_transaction_isolation_all_I_need.3F
+
+http://stackoverflow.com/questions/13581603/jpa-and-optimistic-locking-modes
+
+https://blogs.oracle.com/carolmcdonald/entry/jpa_2_0_concurrency_and
+
+https://weblogs.java.net/blog/caroljmcdonald/archive/2009/07/jpa_20_concurre.html
+
+http://www.objectdb.com/java/jpa/persistence/lock
